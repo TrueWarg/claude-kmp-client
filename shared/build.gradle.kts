@@ -28,9 +28,17 @@ kotlin {
                 implementation("io.ktor:ktor-client-core:2.3.7")
                 implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
                 implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
+                implementation("io.ktor:ktor-client-logging:2.3.7")
 
                 // Date Time
                 implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+
+                // Koin for Dependency Injection
+                implementation("io.insert-koin:koin-core:3.5.3")
+
+                // Multiplatform Settings
+                implementation("com.russhwolf:multiplatform-settings:1.1.1")
+                implementation("com.russhwolf:multiplatform-settings-coroutines:1.1.1")
             }
         }
 
