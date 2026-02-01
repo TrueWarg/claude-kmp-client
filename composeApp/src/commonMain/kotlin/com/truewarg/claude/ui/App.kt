@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import com.truewarg.claude.shared.data.models.Conversation
 import com.truewarg.claude.shared.data.repository.ConversationRepository
 import com.truewarg.claude.shared.data.repository.SettingsRepository
+import com.truewarg.claude.shared.localization.LocalizationManager
 import com.truewarg.claude.ui.screens.ChatScreen
 import com.truewarg.claude.ui.screens.SettingsScreen
 import kotlinx.coroutines.launch
@@ -15,10 +16,12 @@ import org.koin.compose.koinInject
 @Composable
 fun App(
     settingsRepository: SettingsRepository = koinInject(),
-    conversationRepository: ConversationRepository = koinInject()
+    conversationRepository: ConversationRepository = koinInject(),
+    localizationManager: LocalizationManager = koinInject()
 ) {
     var hasApiKey by remember { mutableStateOf<Boolean?>(null) }
     val scope = rememberCoroutineScope()
+    val strings by localizationManager.strings.collectAsState()
 
     LaunchedEffect(Unit) {
         scope.launch {
@@ -59,22 +62,7 @@ fun App(
                                 role = com.truewarg.claude.shared.data.models.MessageRole.ASSISTANT,
                                 content = listOf(
                                     com.truewarg.claude.shared.data.models.ContentBlock.Text(
-                                        """👋 Hello! I'm Claude, your AI coding assistant.
-
-**To get started, I need to know where your project is located.**
-
-Please tell me your workspace path in your first message. For example:
-• "Work in /Users/yourname/my-project"
-• "Use ~/code/myapp as workspace"
-• "My project is at C:\Users\name\projects\app"
-
-Once you specify the workspace, I can:
-✓ Read and write files
-✓ Execute commands
-✓ Help with coding tasks
-✓ Fix bugs and add features
-
-**What's your project directory, and how can I help you today?**"""
+                                        strings.chatWelcomeMessage
                                     )
                                 ),
                                 timestamp = timestamp
