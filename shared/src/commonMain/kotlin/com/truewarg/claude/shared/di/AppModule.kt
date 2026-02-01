@@ -19,8 +19,8 @@ val appModule: List<Module> = listOf(
     localizationModule,
     platformStorageModule,
     storageModule,
+    apiModule,
     // Additional modules will be added here as we implement features
-    // apiModule,
     // gitModule,
     // agentModule,
     // toolsModule,
