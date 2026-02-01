@@ -1,5 +1,6 @@
 package com.truewarg.claude.ui.screens
 
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -8,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -122,7 +124,23 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     val conversation = conversationRepository.getConversation(conversationId)
-                    Text(conversation?.title ?: "Chat")
+                    Column {
+                        Text(conversation?.title ?: "Chat")
+                        if (isLoading) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                ThinkingIndicator()
+                                Text(
+                                    text = "Thinking...",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             )
         },
@@ -176,11 +194,11 @@ fun ChatScreen(
 
             if (isLoading) {
                 item {
-                    Box(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        CircularProgressIndicator()
+                        TypingIndicatorBubble()
                     }
                 }
             }
@@ -241,11 +259,8 @@ fun MessageItem(message: ChatMessage) {
                 }
 
                 if (message.isStreaming) {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    StreamingProgressIndicator(message = message)
                 }
             }
         }
@@ -575,6 +590,113 @@ fun ToolResultBlock(toolResult: ContentBlock.ToolResult) {
             }
         }
     }
+}
+
+@Composable
+fun StreamingProgressIndicator(message: ChatMessage) {
+    val hasThinking = message.content.any { it is ContentBlock.Thinking }
+    val hasToolUse = message.content.any { it is ContentBlock.ToolUse }
+    val hasText = message.content.any { it is ContentBlock.Text && it.text.isNotBlank() }
+
+    val status = when {
+        hasToolUse -> "Using tools..."
+        hasThinking -> "Thinking..."
+        hasText -> "Writing..."
+        else -> "Processing..."
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LinearProgressIndicator(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.primary
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            ThinkingIndicator()
+            Text(
+                text = status,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun ThinkingIndicator() {
+    val infiniteTransition = rememberInfiniteTransition(label = "thinking")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "alpha"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+                shape = CircleShape
+            )
+    )
+}
+
+@Composable
+fun TypingIndicatorBubble() {
+    Surface(
+        shape = RoundedCornerShape(
+            topStart = 16.dp,
+            topEnd = 16.dp,
+            bottomStart = 4.dp,
+            bottomEnd = 16.dp
+        ),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.widthIn(max = 100.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TypingDot(delay = 0)
+            TypingDot(delay = 150)
+            TypingDot(delay = 300)
+        }
+    }
+}
+
+@Composable
+fun TypingDot(delay: Int) {
+    val infiniteTransition = rememberInfiniteTransition(label = "typing_$delay")
+    val offsetY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = -8f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(600, delayMillis = delay, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "offset_$delay"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .offset(y = offsetY.dp)
+            .background(
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                shape = CircleShape
+            )
+    )
 }
 
 @Composable
