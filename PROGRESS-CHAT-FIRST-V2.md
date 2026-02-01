@@ -5,7 +5,7 @@ This file tracks the implementation progress of the chat-first redesign followin
 ## Branch Information
 - **Working branch**: `master`
 - **Architecture**: Chat-first (Claude Code CLI philosophy)
-- **Latest commit**: 717cac2 "Improve tool visualization with better formatting and UI"
+- **Latest commit**: b74769e "Add progress indicators and better loading states (Phase 3, Commit 11)"
 
 ---
 
@@ -81,7 +81,7 @@ This file tracks the implementation progress of the chat-first redesign followin
 
 ---
 
-## Phase 3: Enhanced Message Types ⏸️ IN PROGRESS
+## Phase 3: Enhanced Message Types ✅ COMPLETE
 
 ### ✅ Commit 9: Extended thinking support (included in 6f03229)
 - Parse thinking blocks from API
@@ -107,11 +107,21 @@ This file tracks the implementation progress of the chat-first redesign followin
   - ToolUseBlock with formatted input, running badge
   - ToolResultBlock with line count, error handling
 
-### ⏸️ Commit 11: Progress indicators
-- [ ] Show when Claude is "thinking"
-- [ ] Tool execution progress
-- [ ] Better loading states
-- [ ] Typing indicators
+### ✅ Commit 11: Progress indicators (b74769e) ✨ JUST COMPLETED
+- ✅ Show when Claude is "thinking" (animated indicator in top bar)
+- ✅ Tool execution progress (status badges and contextual text)
+- ✅ Better loading states (StreamingProgressIndicator with phase detection)
+- ✅ Typing indicators (animated dot bubble)
+- **Features**:
+  - ThinkingIndicator: Pulsing dot animation in top bar
+  - TypingIndicatorBubble: Three bouncing dots in message bubble
+  - StreamingProgressIndicator: Shows current phase (thinking/tools/writing)
+  - Smooth animations with FastOutSlowInEasing
+  - Contextual status messages based on message content
+- **Files**: `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/ChatScreen.kt`
+
+### 🎉 Milestone Achieved
+**Rich message types, good UX for different content, excellent visual feedback**
 
 ---
 
@@ -180,12 +190,12 @@ This file tracks the implementation progress of the chat-first redesign followin
 ### Completed Phases
 - ✅ **Phase 1**: Minimal Working Chat (5 commits)
 - ✅ **Phase 2**: Tool Support (2 commits)
-- ⏸️ **Phase 3**: Enhanced Message Types (2 of 3 commits)
+- ✅ **Phase 3**: Enhanced Message Types (3 commits)
 
 ### Progress Statistics
-- **Commits completed**: 9 of 19 (47%)
-- **Phases completed**: 2.5 of 6 (42%)
-- **Current focus**: Phase 3 - Enhanced Message Types
+- **Commits completed**: 10 of 19 (53%)
+- **Phases completed**: 3 of 6 (50%)
+- **Current focus**: Phase 4 - Interactive Elements
 
 ### Key Achievements
 1. ✅ Fully functional chat with streaming
@@ -193,11 +203,13 @@ This file tracks the implementation progress of the chat-first redesign followin
 3. ✅ Tool execution loop (Claude uses tools automatically)
 4. ✅ Rich message visualization with collapsible sections
 5. ✅ JSON formatting and better tool UI
+6. ✅ Comprehensive progress indicators with smooth animations
+7. ✅ Contextual status messages (thinking/tools/writing)
 
 ### Next Steps
-1. Complete Phase 3, Commit 11: Progress indicators
-2. Begin Phase 4: Interactive Elements (AskUserQuestion tool)
-3. Implement Phase 5: Conversation Management
+1. Begin Phase 4: Interactive Elements (AskUserQuestion tool)
+2. Implement option selection UI
+3. Start Phase 5: Conversation Management
 
 ---
 
@@ -205,18 +217,18 @@ This file tracks the implementation progress of the chat-first redesign followin
 - ✅ All modules compile successfully
 - ✅ Android app builds (debug + release)
 - ✅ Desktop app builds
-- ⚠️ Minor warning: Unused parameter in ChatScreen.kt:147
+- ⚠️ Minor warning: Unused parameter in ChatScreen.kt:165 (updatedMessage)
 
 ## Recent Commits
 ```
-717cac2 Improve tool visualization with better formatting and UI
+b74769e Add progress indicators and better loading states (Phase 3, Commit 11)
+7ac0cf1 Add comprehensive progress tracking for chat-first v2 implementation
+717cac2 Improve tool visualization with better formatting and UI (Phase 3, Commit 10)
 6f03229 Phase 2, Commit 7: Tool use in chat
 33e7c71 Phase 2, Commit 6: Tool execution framework
 d959778 Add API key setup flow and improve desktop UX
 7cf210a Phase 1, Commits 4-5: Basic ChatScreen UI with streaming
 af89acd Phase 1, Commit 3: Chat repository and storage
-5789221 Phase 1, Commit 2: Update ClaudeApiClient for chat
-54e736d Phase 1, Commit 1: Create data models for chat
 ```
 
 ## Notes
