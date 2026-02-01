@@ -31,10 +31,10 @@ data class ModelsResponse(
 )
 
 /**
- * Message content block
+ * Message content block (API format)
  */
 @Serializable
-data class ContentBlock(
+data class ApiContentBlock(
     val type: String,
     val text: String? = null,
     @SerialName("tool_use_id")
@@ -50,14 +50,14 @@ data class ContentBlock(
 @Serializable
 data class Message(
     val role: String, // "user" or "assistant"
-    val content: List<ContentBlock>
+    val content: List<ApiContentBlock>
 )
 
 /**
  * Simple message constructor
  */
 fun Message(role: String, text: String): Message {
-    return Message(role, listOf(ContentBlock("text", text = text)))
+    return Message(role, listOf(ApiContentBlock("text", text = text)))
 }
 
 /**
@@ -99,40 +99,13 @@ data class MessagesResponse(
     val id: String,
     val type: String,
     val role: String,
-    val content: List<ContentBlock>,
+    val content: List<ApiContentBlock>,
     val model: String,
     @SerialName("stop_reason")
     val stopReason: String?,
     @SerialName("stop_sequence")
     val stopSequence: String? = null,
     val usage: Usage
-)
-
-/**
- * Streaming message delta
- */
-@Serializable
-data class StreamingDelta(
-    val type: String,
-    val text: String? = null,
-    @SerialName("stop_reason")
-    val stopReason: String? = null,
-    @SerialName("stop_sequence")
-    val stopSequence: String? = null
-)
-
-/**
- * Streaming message event
- */
-@Serializable
-data class StreamingEvent(
-    val type: String,
-    val message: MessagesResponse? = null,
-    val index: Int? = null,
-    @SerialName("content_block")
-    val contentBlock: ContentBlock? = null,
-    val delta: StreamingDelta? = null,
-    val usage: Usage? = null
 )
 
 /**
