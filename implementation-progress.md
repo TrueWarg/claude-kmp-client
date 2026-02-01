@@ -13,9 +13,9 @@ Kotlin Multiplatform application providing Claude AI client for Android and Desk
 - Target Platforms: Android (API 21+), Desktop/JVM
 
 ## Branch Information
-- Working branch: `first-version`
+- Working branch: `phase-2-3-implementation`
 - Target branch: `master`
-- Latest commit: 03aef2d "Create basic app scaffold with navigation"
+- Latest commit: 5c7c8e6 "Add file operations and tree view"
 
 ## Completed Work (Phase 1: Project Foundation)
 
@@ -66,39 +66,80 @@ Kotlin Multiplatform application providing Claude AI client for Android and Desk
 - ✅ Desktop app builds
 - ✅ No test failures (tests skipped with -x test flag)
 
+## Completed Work (Phase 2: Authentication & API Integration)
+
+### ✅ Commit 5: Implement API key storage and management
+- Created SecureStorage interface for API keys and sensitive data
+- Implemented Android SecureStorage using EncryptedSharedPreferences with hardware-backed encryption
+- Implemented Desktop SecureStorage using Java Preferences with Base64 encoding
+- Added AppSettings data model with PermissionMode enum
+- Created SettingsRepository for managing app settings and API keys
+- Added API key validation for Claude API keys (sk-ant- prefix)
+- Integrated storage modules into DI system
+- Added AndroidX Security library dependency for encrypted storage
+
+### ✅ Commit 6: Implement Claude API client
+- Created data models for Claude API (ClaudeModel, MessagesRequest, MessagesResponse, StreamingEvent)
+- Implemented ClaudeApiClient with Ktor HTTP client
+- Added authentication using x-api-key header
+- Implemented /v1/models endpoint to fetch available models
+- Implemented /v1/messages endpoint for non-streaming messages
+- Added streaming support for /v1/messages with SSE parsing
+- Implemented API key validation endpoint
+- Added proper error handling with ApiException
+- Created API module for dependency injection
+
+### ✅ Commit 7: Add model selection and management
+- Created ModelsRepository for managing Claude models
+- Implemented model fetching with 24-hour caching mechanism
+- Added model caching using Settings with timestamp validation
+- Updated SettingsScreen UI with comprehensive settings:
+  - API key input with password masking and validation
+  - Model selection dropdown with fetched models
+  - System prompt text field
+  - Loading states and error handling
+- Added automatic model fetching when API key is saved
+- Integrated ModelsRepository into API module
+- Implemented retry mechanism for failed model fetches
+
+## Completed Work (Phase 3: File System Access)
+
+### ✅ Commit 8: Create FileSystemManager interface
+- Defined comprehensive FileSystemManager interface for cross-platform file operations
+- Added methods for file picking (folder and file)
+- Implemented file I/O operations (read, write, create, delete)
+- Added file system queries (exists, listFiles, getFileInfo)
+- Included directory watching with Flow-based events
+- Added permission checking and requesting
+- Defined data models: FileEntry, FileInfo, FileSystemEvent
+- Added FileSystemException for error handling
+
+### ✅ Commit 9: Implement platform-specific file systems
+- Created DesktopFileSystemManager using java.io.File and java.nio.file APIs
+- Implemented JFileChooser for folder/file picking on Desktop
+- Added directory watching with WatchService on Desktop
+- Created AndroidFileSystemManager with Scoped Storage support
+- Implemented DocumentFile API integration for Android 10+ (API 29+)
+- Added fallback to java.io.File for internal storage on Android
+- Handled persistent URI permissions for workspace access
+- Implemented ContextCompat for backward-compatible permission checks
+- Created platform-specific FileSystem DI modules
+- Added dependencies: androidx.documentfile and androidx.core
+
+### ✅ Commit 10: Add file operations and tree view
+- Created FileTreeView component for browsing directory structure
+- Implemented expandable tree nodes for directories
+- Added file selection with visual feedback
+- Display file size in human-readable format
+- Integrated FileTreeView into EditorScreen
+- Added split-panel layout (file tree on left, content on right)
+- Implemented file content viewer with monospace font
+- Added folder picker button in EditorScreen toolbar
+- Display loading states for file operations
+- Show empty states for no workspace or no file selected
+- Support workspace path persistence through settings
+
 ## Remaining Work
-
-### Phase 2: Authentication & API Integration (Commits 5-7)
-
-#### TODO Commit 5: Implement API key storage and management
-- [ ] Create SecureStorage interface for API keys
-- [ ] Implement Android KeyStore integration
-- [ ] Implement Desktop secure storage
-- [ ] Add API key validation
-- [ ] Create SettingsRepository
-
-#### TODO Commit 6: Implement Claude API client
-- [ ] Create ClaudeApiClient with Ktor
-- [ ] Implement authentication headers
-- [ ] Create data models for API requests/responses (kotlinx.serialization)
-- [ ] Add /v1/models endpoint
-- [ ] Implement /v1/messages endpoint with streaming
-- [ ] Add proper error handling
-
-#### TODO Commit 7: Add model selection and management
-- [ ] Fetch available models from API
-- [ ] Create models list UI
-- [ ] Implement model selection in settings
-- [ ] Add model caching mechanism
-
-### Phase 3: File System Access (Commits 8-10)
-- [ ] Create FileSystemManager interface
-- [ ] Implement Android file system (Scoped Storage API 30+)
-- [ ] Implement Desktop file system
-- [ ] Add permissions handling for Android 11+
-- [ ] Create folder picker UI
-- [ ] Add file read/write operations
-- [ ] Create file tree view component
 
 ### Phase 4: Settings & Configuration (Commits 11-13)
 - [ ] Create Settings data model
@@ -158,16 +199,34 @@ Kotlin Multiplatform application providing Claude AI client for Android and Desk
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/Platform.kt`
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/di/CoreModule.kt`
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/di/AppModule.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/di/StorageModule.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/di/ApiModule.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/di/FileSystemModule.kt`
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/localization/Language.kt`
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/localization/Strings.kt`
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/localization/StringResources.kt`
 - `shared/src/commonMain/kotlin/com/truewarg/claude/shared/localization/LocalizationManager.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/storage/SecureStorage.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/data/models/AppSettings.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/data/models/ClaudeModels.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/data/repository/SettingsRepository.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/data/repository/ModelsRepository.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/api/ClaudeApiClient.kt`
+- `shared/src/commonMain/kotlin/com/truewarg/claude/shared/filesystem/FileSystemManager.kt`
 
 ### Platform-Specific
 - `shared/src/androidMain/kotlin/com/truewarg/claude/shared/Platform.android.kt`
 - `shared/src/androidMain/kotlin/com/truewarg/claude/shared/di/CoreModule.android.kt`
+- `shared/src/androidMain/kotlin/com/truewarg/claude/shared/di/StorageModule.android.kt`
+- `shared/src/androidMain/kotlin/com/truewarg/claude/shared/di/FileSystemModule.android.kt`
+- `shared/src/androidMain/kotlin/com/truewarg/claude/shared/storage/SecureStorage.android.kt`
+- `shared/src/androidMain/kotlin/com/truewarg/claude/shared/filesystem/AndroidFileSystemManager.kt`
 - `shared/src/desktopMain/kotlin/com/truewarg/claude/shared/Platform.desktop.kt`
 - `shared/src/desktopMain/kotlin/com/truewarg/claude/shared/di/CoreModule.desktop.kt`
+- `shared/src/desktopMain/kotlin/com/truewarg/claude/shared/di/StorageModule.desktop.kt`
+- `shared/src/desktopMain/kotlin/com/truewarg/claude/shared/di/FileSystemModule.desktop.kt`
+- `shared/src/desktopMain/kotlin/com/truewarg/claude/shared/storage/SecureStorage.desktop.kt`
+- `shared/src/desktopMain/kotlin/com/truewarg/claude/shared/filesystem/DesktopFileSystemManager.kt`
 
 ### Compose UI
 - `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/App.kt`
@@ -177,8 +236,9 @@ Kotlin Multiplatform application providing Claude AI client for Android and Desk
 - `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/ChatScreen.kt`
 - `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/AgentsScreen.kt`
 - `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/SkillsScreen.kt`
-- `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/SettingsScreen.kt`
-- `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/EditorScreen.kt`
+- `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/SettingsScreen.kt` (updated with API key and model selection)
+- `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/screens/EditorScreen.kt` (updated with file tree view)
+- `composeApp/src/commonMain/kotlin/com/truewarg/claude/ui/components/FileTreeView.kt`
 
 ### Android Entry Point
 - `androidApp/src/main/kotlin/com/truewarg/claude/android/MainActivity.kt`

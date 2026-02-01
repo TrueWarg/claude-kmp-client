@@ -95,6 +95,11 @@ object StringResources {
         filesNoAccess = "No access to file system",
         filesPermissionRequired = "Storage permission required",
         filesSelectFile = "Select File",
+        filesNoFiles = "No files found",
+        filesFolder = "Folder",
+        filesFile = "File",
+        filesDirectory = "Directory",
+        filesErrorLoading = "Error loading file",
 
         // Git
         gitTitle = "Git",
@@ -213,6 +218,11 @@ object StringResources {
         filesNoAccess = "Нет доступа к файловой системе",
         filesPermissionRequired = "Требуется разрешение на хранилище",
         filesSelectFile = "Выбрать файл",
+        filesNoFiles = "Файлы не найдены",
+        filesFolder = "Папка",
+        filesFile = "Файл",
+        filesDirectory = "Директория",
+        filesErrorLoading = "Ошибка загрузки файла",
 
         // Git
         gitTitle = "Git",
