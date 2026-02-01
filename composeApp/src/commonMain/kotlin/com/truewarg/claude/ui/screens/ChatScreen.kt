@@ -30,6 +30,7 @@ import com.truewarg.claude.shared.data.models.ContentBlock
 import com.truewarg.claude.shared.data.models.MessageRole
 import com.truewarg.claude.shared.data.repository.ChatRepository
 import com.truewarg.claude.shared.data.repository.ConversationRepository
+import com.truewarg.claude.shared.localization.LocalizationManager
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -93,13 +94,15 @@ private fun formatJson(jsonString: String): String {
 fun ChatScreen(
     conversationId: String,
     chatRepository: ChatRepository = koinInject(),
-    conversationRepository: ConversationRepository = koinInject()
+    conversationRepository: ConversationRepository = koinInject(),
+    localizationManager: LocalizationManager = koinInject()
 ) {
     var messages by remember { mutableStateOf(conversationRepository.getMessages(conversationId)) }
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val strings by localizationManager.strings.collectAsState()
 
     LaunchedEffect(conversationId) {
         messages = conversationRepository.getMessages(conversationId)
@@ -160,7 +163,7 @@ fun ChatScreen(
                                     role = MessageRole.ASSISTANT,
                                     content = listOf(
                                         ContentBlock.Text(
-                                            "❌ **Error**\n\n" +
+                                            "${strings.chatErrorPrefix}\n\n" +
                                             "${e.message ?: "Unknown error"}\n\n" +
                                             "```\n${e.stackTraceToString()}\n```"
                                         )
