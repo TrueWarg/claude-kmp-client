@@ -52,6 +52,8 @@ data class Strings(
     val chatDeleteConfirm: String,
     val chatEmptyState: String,
     val chatStreaming: String,
+    val chatWelcomeMessage: String,
+    val chatErrorPrefix: String,
 
     // Agents
     val agentsTitle: String,

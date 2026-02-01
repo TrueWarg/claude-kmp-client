@@ -55,6 +55,23 @@ object StringResources {
         chatDeleteConfirm = "Are you sure you want to delete this conversation?",
         chatEmptyState = "Start a new conversation with Claude",
         chatStreaming = "Claude is typing...",
+        chatWelcomeMessage = """👋 Hello! I'm Claude, your AI coding assistant.
+
+**To get started, I need to know where your project is located.**
+
+Please tell me your workspace path in your first message. For example:
+• "Work in /Users/yourname/my-project"
+• "Use ~/code/myapp as workspace"
+• "My project is at C:\Users\name\projects\app"
+
+Once you specify the workspace, I can:
+✓ Read and write files
+✓ Execute commands
+✓ Help with coding tasks
+✓ Fix bugs and add features
+
+**What's your project directory, and how can I help you today?**""",
+        chatErrorPrefix = "❌ **Error**",
 
         // Agents
         agentsTitle = "Custom Agents",
@@ -178,6 +195,23 @@ object StringResources {
         chatDeleteConfirm = "Вы уверены, что хотите удалить этот разговор?",
         chatEmptyState = "Начните новый разговор с Claude",
         chatStreaming = "Claude печатает...",
+        chatWelcomeMessage = """👋 Здравствуйте! Я Claude, ваш AI-помощник для программирования.
+
+**Чтобы начать, мне нужно знать, где находится ваш проект.**
+
+Пожалуйста, укажите путь к рабочей области в первом сообщении. Например:
+• "Работай в /Users/yourname/my-project"
+• "Используй ~/code/myapp как рабочую область"
+• "Мой проект находится в C:\Users\name\projects\app"
+
+После указания рабочей области я смогу:
+✓ Читать и записывать файлы
+✓ Выполнять команды
+✓ Помогать с задачами программирования
+✓ Исправлять ошибки и добавлять функции
+
+**Какой у вас путь к проекту, и чем я могу помочь?**""",
+        chatErrorPrefix = "❌ **Ошибка**",
 
         // Agents
         agentsTitle = "Пользовательские агенты",
