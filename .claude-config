@@ -1,0 +1,6 @@
+# Claude Code Configuration
+
+# Git Commit Settings
+# DO NOT add "Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" to any commits
+# The user explicitly does NOT want Claude attribution in commit messages
+NO_CLAUDE_ATTRIBUTION=true
