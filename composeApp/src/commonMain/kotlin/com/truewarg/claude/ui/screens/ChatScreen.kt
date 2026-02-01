@@ -114,7 +114,7 @@ fun ChatScreen(
                 title = {
                     val conversation = conversationRepository.getConversation(conversationId)
                     Column {
-                        Text(conversation?.title ?: "Chat")
+                        Text(conversation?.title ?: strings.chatTitle)
                         if (isLoading) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -123,7 +123,7 @@ fun ChatScreen(
                             ) {
                                 ThinkingIndicator()
                                 Text(
-                                    text = "Thinking...",
+                                    text = strings.chatThinkingStatus,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -137,6 +137,7 @@ fun ChatScreen(
             ChatInput(
                 text = inputText,
                 onTextChange = { inputText = it },
+                strings = strings,
                 onSend = {
                     if (inputText.isNotBlank() && !isLoading) {
                         val message = inputText
@@ -164,7 +165,7 @@ fun ChatScreen(
                                     content = listOf(
                                         ContentBlock.Text(
                                             "${strings.chatErrorPrefix}\n\n" +
-                                            "${e.message ?: "Unknown error"}\n\n" +
+                                            "${e.message ?: strings.chatUnknownError}\n\n" +
                                             "```\n${e.stackTraceToString()}\n```"
                                         )
                                     ),
@@ -194,7 +195,7 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(messages, key = { it.id }) { message ->
-                MessageItem(message = message)
+                MessageItem(message = message, strings = strings)
             }
 
             if (isLoading) {
@@ -212,7 +213,7 @@ fun ChatScreen(
 }
 
 @Composable
-fun MessageItem(message: ChatMessage) {
+fun MessageItem(message: ChatMessage, strings: com.truewarg.claude.shared.localization.Strings) {
     val isUser = message.role == MessageRole.USER
 
     Row(
@@ -250,22 +251,22 @@ fun MessageItem(message: ChatMessage) {
                         }
 
                         is ContentBlock.Thinking -> {
-                            ThinkingBlock(thinking = block.thinking)
+                            ThinkingBlock(thinking = block.thinking, strings = strings)
                         }
 
                         is ContentBlock.ToolUse -> {
-                            ToolUseBlock(toolUse = block, isRunning = message.isStreaming)
+                            ToolUseBlock(toolUse = block, isRunning = message.isStreaming, strings = strings)
                         }
 
                         is ContentBlock.ToolResult -> {
-                            ToolResultBlock(toolResult = block)
+                            ToolResultBlock(toolResult = block, strings = strings)
                         }
                     }
                 }
 
                 if (message.isStreaming) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    StreamingProgressIndicator(message = message)
+                    StreamingProgressIndicator(message = message, strings = strings)
                 }
             }
         }
@@ -273,7 +274,7 @@ fun MessageItem(message: ChatMessage) {
 }
 
 @Composable
-fun ThinkingBlock(thinking: String) {
+fun ThinkingBlock(thinking: String, strings: com.truewarg.claude.shared.localization.Strings) {
     var isExpanded by remember { mutableStateOf(false) }
     val preview = remember(thinking) {
         thinking.take(60).let { if (thinking.length > 60) "$it..." else it }
@@ -305,7 +306,7 @@ fun ThinkingBlock(thinking: String) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "Thinking",
+                            text = strings.chatThinking,
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -324,7 +325,7 @@ fun ThinkingBlock(thinking: String) {
                 }
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    contentDescription = if (isExpanded) strings.chatCollapse else strings.chatExpand,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp)
                 )
@@ -357,7 +358,7 @@ fun ThinkingBlock(thinking: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ToolUseBlock(toolUse: ContentBlock.ToolUse, isRunning: Boolean) {
+fun ToolUseBlock(toolUse: ContentBlock.ToolUse, isRunning: Boolean, strings: com.truewarg.claude.shared.localization.Strings) {
     var isExpanded by remember { mutableStateOf(false) }
     val formattedInput = remember(toolUse.input) {
         formatJson(toolUse.input)
@@ -412,7 +413,7 @@ fun ToolUseBlock(toolUse: ContentBlock.ToolUse, isRunning: Boolean) {
                                         color = MaterialTheme.colorScheme.onTertiary
                                     )
                                     Text(
-                                        text = "Running",
+                                        text = strings.chatRunning,
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onTertiary
                                     )
@@ -433,7 +434,7 @@ fun ToolUseBlock(toolUse: ContentBlock.ToolUse, isRunning: Boolean) {
                 }
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    contentDescription = if (isExpanded) strings.chatCollapse else strings.chatExpand,
                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                     modifier = Modifier.size(20.dp)
                 )
@@ -468,7 +469,7 @@ fun ToolUseBlock(toolUse: ContentBlock.ToolUse, isRunning: Boolean) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ToolResultBlock(toolResult: ContentBlock.ToolResult) {
+fun ToolResultBlock(toolResult: ContentBlock.ToolResult, strings: com.truewarg.claude.shared.localization.Strings) {
     var isExpanded by remember { mutableStateOf(false) }
     val contentPreview = remember(toolResult.content) {
         toolResult.content.take(80).let { if (toolResult.content.length > 80) "$it..." else it }
@@ -508,7 +509,7 @@ fun ToolResultBlock(toolResult: ContentBlock.ToolResult) {
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = if (toolResult.isError) "Error" else "Result",
+                            text = if (toolResult.isError) strings.error else strings.chatResult,
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = if (toolResult.isError) {
                                 MaterialTheme.colorScheme.onErrorContainer
@@ -521,7 +522,7 @@ fun ToolResultBlock(toolResult: ContentBlock.ToolResult) {
                                 containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f)
                             ) {
                                 Text(
-                                    text = "$contentLines lines",
+                                    text = "$contentLines ${strings.chatLines}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSecondary,
                                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -546,7 +547,7 @@ fun ToolResultBlock(toolResult: ContentBlock.ToolResult) {
                 }
                 Icon(
                     imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (isExpanded) "Collapse" else "Expand",
+                    contentDescription = if (isExpanded) strings.chatCollapse else strings.chatExpand,
                     tint = if (toolResult.isError) {
                         MaterialTheme.colorScheme.onErrorContainer
                     } else {
@@ -598,16 +599,16 @@ fun ToolResultBlock(toolResult: ContentBlock.ToolResult) {
 }
 
 @Composable
-fun StreamingProgressIndicator(message: ChatMessage) {
+fun StreamingProgressIndicator(message: ChatMessage, strings: com.truewarg.claude.shared.localization.Strings) {
     val hasThinking = message.content.any { it is ContentBlock.Thinking }
     val hasToolUse = message.content.any { it is ContentBlock.ToolUse }
     val hasText = message.content.any { it is ContentBlock.Text && it.text.isNotBlank() }
 
     val status = when {
-        hasToolUse -> "Using tools..."
-        hasThinking -> "Thinking..."
-        hasText -> "Writing..."
-        else -> "Processing..."
+        hasToolUse -> strings.chatUsingTools
+        hasThinking -> strings.chatThinkingStatus
+        hasText -> strings.chatWriting
+        else -> strings.chatProcessing
     }
 
     Row(
@@ -708,6 +709,7 @@ fun TypingDot(delay: Int) {
 fun ChatInput(
     text: String,
     onTextChange: (String) -> Unit,
+    strings: com.truewarg.claude.shared.localization.Strings,
     onSend: () -> Unit,
     enabled: Boolean
 ) {
@@ -741,7 +743,7 @@ fun ChatInput(
                             false // Let TextField handle all other keys including Shift+Enter
                         }
                     },
-                placeholder = { Text("Message... (Enter to send, Shift+Enter for new line)") },
+                placeholder = { Text(strings.chatInputHint) },
                 enabled = enabled,
                 minLines = 1,
                 maxLines = 6,
@@ -758,7 +760,7 @@ fun ChatInput(
                 enabled = enabled && text.isNotBlank(),
                 modifier = Modifier.height(56.dp)
             ) {
-                Text("Send")
+                Text(strings.chatSend)
             }
         }
     }

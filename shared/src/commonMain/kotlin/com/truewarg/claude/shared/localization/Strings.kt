@@ -54,6 +54,17 @@ data class Strings(
     val chatStreaming: String,
     val chatWelcomeMessage: String,
     val chatErrorPrefix: String,
+    val chatUnknownError: String,
+    val chatThinking: String,
+    val chatThinkingStatus: String,
+    val chatUsingTools: String,
+    val chatWriting: String,
+    val chatProcessing: String,
+    val chatRunning: String,
+    val chatResult: String,
+    val chatLines: String,
+    val chatCollapse: String,
+    val chatExpand: String,
 
     // Agents
     val agentsTitle: String,
