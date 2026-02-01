@@ -1,19 +1,24 @@
 package com.truewarg.claude.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.truewarg.claude.ui.navigation.NavigationHost
-import com.truewarg.claude.ui.navigation.rememberNavigationState
 
 @Composable
 fun App() {
-    val navigationState = rememberNavigationState()
-
     MaterialTheme {
-        Surface(modifier = Modifier) {
-            NavigationHost(navigationState = navigationState)
+        Surface(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Chat UI will be implemented in Phase 1")
+            }
         }
     }
 }
