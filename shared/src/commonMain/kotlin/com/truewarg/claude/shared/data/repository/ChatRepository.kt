@@ -2,14 +2,21 @@ package com.truewarg.claude.shared.data.repository
 
 import com.truewarg.claude.shared.api.ClaudeApiClient
 import com.truewarg.claude.shared.data.models.*
+import com.truewarg.claude.shared.tools.ToolManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.Clock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlin.random.Random
 
 class ChatRepository(
     private val apiClient: ClaudeApiClient,
-    private val conversationRepository: ConversationRepository
+    private val conversationRepository: ConversationRepository,
+    private val toolManager: ToolManager,
+    private val json: Json
 ) {
     fun sendMessage(
         conversationId: String,
@@ -34,124 +41,195 @@ class ChatRepository(
 
         emit(userChatMessage)
 
-        val history = conversationRepository.getMessages(conversationId)
-        val apiMessages = history.map { it.toApiMessage() }
+        // Tool execution loop - continue until no more tools are requested
+        var continueLoop = true
+        while (continueLoop) {
+            val history = conversationRepository.getMessages(conversationId)
+            val apiMessages = history.map { it.toApiMessage() }
 
-        val request = MessagesRequest(
-            model = model,
-            messages = apiMessages,
-            maxTokens = 4096,
-            stream = true
-        )
-
-        val result = apiClient.sendMessageStreaming(request)
-
-        result.fold(
-            onSuccess = { streamFlow ->
-                val assistantMessage = ChatMessage(
-                    id = generateId(),
-                    conversationId = conversationId,
-                    role = MessageRole.ASSISTANT,
-                    content = emptyList(),
-                    timestamp = Clock.System.now().toEpochMilliseconds(),
-                    isStreaming = true
+            // Convert tool definitions to JsonObject
+            val toolDefinitions = toolManager.getAllToolDefinitions().map { tool ->
+                json.decodeFromJsonElement<JsonObject>(
+                    json.parseToJsonElement(json.encodeToString(tool))
                 )
+            }
 
-                conversationRepository.addMessage(assistantMessage)
-                emit(assistantMessage)
+            val request = MessagesRequest(
+                model = model,
+                messages = apiMessages,
+                maxTokens = 4096,
+                stream = true,
+                tools = toolDefinitions
+            )
 
-                val contentBlocks = mutableListOf<ContentBlock>()
-                var currentTextIndex = -1
-                var currentThinkingIndex = -1
-                var currentToolUseIndex = -1
+            val result = apiClient.sendMessageStreaming(request)
 
-                streamFlow.collect { event ->
-                    when (event) {
-                        is StreamingEvent.ContentBlockStart -> {
-                            when (event.contentBlock.type) {
-                                "text" -> {
-                                    currentTextIndex = event.index
-                                    contentBlocks.add(ContentBlock.Text(""))
+            result.fold(
+                onSuccess = { streamFlow ->
+                    val assistantMessage = ChatMessage(
+                        id = generateId(),
+                        conversationId = conversationId,
+                        role = MessageRole.ASSISTANT,
+                        content = emptyList(),
+                        timestamp = Clock.System.now().toEpochMilliseconds(),
+                        isStreaming = true
+                    )
+
+                    conversationRepository.addMessage(assistantMessage)
+                    emit(assistantMessage)
+
+                    val contentBlocks = mutableListOf<ContentBlock>()
+                    val toolUses = mutableListOf<ContentBlock.ToolUse>()
+
+                    streamFlow.collect { event ->
+                        when (event) {
+                            is StreamingEvent.ContentBlockStart -> {
+                                when (event.contentBlock.type) {
+                                    "text" -> {
+                                        contentBlocks.add(ContentBlock.Text(""))
+                                    }
+                                    "thinking" -> {
+                                        contentBlocks.add(ContentBlock.Thinking(""))
+                                    }
+                                    "tool_use" -> {
+                                        val toolUse = ContentBlock.ToolUse(
+                                            id = event.contentBlock.id ?: "",
+                                            name = event.contentBlock.name ?: "",
+                                            input = ""
+                                        )
+                                        contentBlocks.add(toolUse)
+                                    }
                                 }
-                                "thinking" -> {
-                                    currentThinkingIndex = event.index
-                                    contentBlocks.add(ContentBlock.Thinking(""))
+                            }
+
+                            is StreamingEvent.ContentBlockDelta -> {
+                                when (val delta = event.delta) {
+                                    is Delta.TextDelta -> {
+                                        val index = event.index
+                                        if (index < contentBlocks.size && contentBlocks[index] is ContentBlock.Text) {
+                                            val current = contentBlocks[index] as ContentBlock.Text
+                                            contentBlocks[index] = ContentBlock.Text(
+                                                current.text + delta.text
+                                            )
+                                        }
+                                    }
+
+                                    is Delta.ThinkingDelta -> {
+                                        val index = event.index
+                                        if (index < contentBlocks.size && contentBlocks[index] is ContentBlock.Thinking) {
+                                            val current = contentBlocks[index] as ContentBlock.Thinking
+                                            contentBlocks[index] = ContentBlock.Thinking(
+                                                current.thinking + delta.thinking
+                                            )
+                                        }
+                                    }
+
+                                    is Delta.InputJsonDelta -> {
+                                        val index = event.index
+                                        if (index < contentBlocks.size && contentBlocks[index] is ContentBlock.ToolUse) {
+                                            val current = contentBlocks[index] as ContentBlock.ToolUse
+                                            contentBlocks[index] = current.copy(
+                                                input = current.input + delta.partialJson
+                                            )
+                                        }
+                                    }
                                 }
-                                "tool_use" -> {
-                                    currentToolUseIndex = event.index
-                                    val toolUse = ContentBlock.ToolUse(
-                                        id = event.contentBlock.id ?: "",
-                                        name = event.contentBlock.name ?: "",
-                                        input = ""
+
+                                val updated = assistantMessage.copy(
+                                    content = contentBlocks.toList(),
+                                    isStreaming = true
+                                )
+                                conversationRepository.updateMessage(updated)
+                                emit(updated)
+                            }
+
+                            is StreamingEvent.MessageStop -> {
+                                // Collect all tool uses from the message
+                                toolUses.clear()
+                                contentBlocks.forEach { block ->
+                                    if (block is ContentBlock.ToolUse) {
+                                        toolUses.add(block)
+                                    }
+                                }
+
+                                val final = assistantMessage.copy(
+                                    content = contentBlocks.toList(),
+                                    isStreaming = false
+                                )
+                                conversationRepository.updateMessage(final)
+                                conversationRepository.updateConversation(
+                                    conversation.withUpdatedTime().withIncrementedMessages()
+                                )
+                                emit(final)
+
+                                // If there are tool uses, execute them
+                                if (toolUses.isNotEmpty()) {
+                                    // Execute tools and add results as a new message
+                                    val toolResults = mutableListOf<ContentBlock>()
+
+                                    toolUses.forEach { toolUse ->
+                                        val input = try {
+                                            json.parseToJsonElement(toolUse.input).let { elem ->
+                                                if (elem is JsonObject) {
+                                                    elem.entries.associate { it.key to it.value }
+                                                } else {
+                                                    emptyMap()
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            emptyMap()
+                                        }
+
+                                        val result = toolManager.executeTool(toolUse.name, input)
+
+                                        toolResults.add(
+                                            ContentBlock.ToolResult(
+                                                toolUseId = toolUse.id,
+                                                content = result.output,
+                                                isError = result.isError
+                                            )
+                                        )
+                                    }
+
+                                    // Add tool results as a user message
+                                    val toolResultMessage = ChatMessage(
+                                        id = generateId(),
+                                        conversationId = conversationId,
+                                        role = MessageRole.USER,
+                                        content = toolResults,
+                                        timestamp = Clock.System.now().toEpochMilliseconds()
                                     )
-                                    contentBlocks.add(toolUse)
-                                }
-                            }
-                        }
 
-                        is StreamingEvent.ContentBlockDelta -> {
-                            when (val delta = event.delta) {
-                                is Delta.TextDelta -> {
-                                    if (currentTextIndex >= 0 && currentTextIndex < contentBlocks.size) {
-                                        val current = contentBlocks[currentTextIndex] as? ContentBlock.Text
-                                        contentBlocks[currentTextIndex] = ContentBlock.Text(
-                                            (current?.text ?: "") + delta.text
-                                        )
-                                    }
-                                }
+                                    conversationRepository.addMessage(toolResultMessage)
+                                    emit(toolResultMessage)
 
-                                is Delta.ThinkingDelta -> {
-                                    if (currentThinkingIndex >= 0 && currentThinkingIndex < contentBlocks.size) {
-                                        val current = contentBlocks[currentThinkingIndex] as? ContentBlock.Thinking
-                                        contentBlocks[currentThinkingIndex] = ContentBlock.Thinking(
-                                            (current?.thinking ?: "") + delta.thinking
-                                        )
-                                    }
-                                }
-
-                                is Delta.InputJsonDelta -> {
-                                    if (currentToolUseIndex >= 0 && currentToolUseIndex < contentBlocks.size) {
-                                        val current = contentBlocks[currentToolUseIndex] as? ContentBlock.ToolUse
-                                        contentBlocks[currentToolUseIndex] = current!!.copy(
-                                            input = current.input + delta.partialJson
-                                        )
-                                    }
+                                    // Continue the loop to get Claude's response to the tool results
+                                    continueLoop = true
+                                } else {
+                                    // No more tools, end the loop
+                                    continueLoop = false
                                 }
                             }
 
-                            val updated = assistantMessage.copy(
-                                content = contentBlocks.toList(),
-                                isStreaming = true
-                            )
-                            conversationRepository.updateMessage(updated)
-                            emit(updated)
-                        }
+                            is StreamingEvent.Error -> {
+                                throw Exception("API Error: ${event.error.message}")
+                            }
 
-                        is StreamingEvent.MessageStop -> {
-                            val final = assistantMessage.copy(
-                                content = contentBlocks.toList(),
-                                isStreaming = false
-                            )
-                            conversationRepository.updateMessage(final)
-                            conversationRepository.updateConversation(
-                                conversation.withUpdatedTime().withIncrementedMessages()
-                            )
-                            emit(final)
-                        }
-
-                        is StreamingEvent.Error -> {
-                            throw Exception("API Error: ${event.error.message}")
-                        }
-
-                        else -> {
+                            else -> {
+                                // Ignore other events
+                            }
                         }
                     }
+                },
+                onFailure = { error ->
+                    continueLoop = false
+                    throw error
                 }
-            },
-            onFailure = { error ->
-                throw error
-            }
-        )
+            )
+
+            // Break if no tool uses were found (continueLoop was set to false in MessageStop)
+            if (!continueLoop) break
+        }
     }
 
     private fun ChatMessage.toApiMessage(): Message {
@@ -171,7 +249,17 @@ class ChatRepository(
                     type = "tool_use",
                     id = block.id,
                     name = block.name,
-                    input = mapOf("data" to block.input)
+                    input = try {
+                        json.parseToJsonElement(block.input).let { elem ->
+                            if (elem is JsonObject) {
+                                elem.entries.associate { it.key to it.value.toString().trim('"') }
+                            } else {
+                                mapOf("data" to block.input)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        mapOf("data" to block.input)
+                    }
                 )
 
                 is ContentBlock.ToolResult -> ApiContentBlock(
