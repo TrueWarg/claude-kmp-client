@@ -72,6 +72,17 @@ Once you specify the workspace, I can:
 
 **What's your project directory, and how can I help you today?**""",
         chatErrorPrefix = "❌ **Error**",
+        chatUnknownError = "Unknown error",
+        chatThinking = "Thinking",
+        chatThinkingStatus = "Thinking...",
+        chatUsingTools = "Using tools...",
+        chatWriting = "Writing...",
+        chatProcessing = "Processing...",
+        chatRunning = "Running",
+        chatResult = "Result",
+        chatLines = "lines",
+        chatCollapse = "Collapse",
+        chatExpand = "Expand",
 
         // Agents
         agentsTitle = "Custom Agents",
@@ -212,6 +223,17 @@ Once you specify the workspace, I can:
 
 **Какой у вас путь к проекту, и чем я могу помочь?**""",
         chatErrorPrefix = "❌ **Ошибка**",
+        chatUnknownError = "Неизвестная ошибка",
+        chatThinking = "Размышление",
+        chatThinkingStatus = "Размышляю...",
+        chatUsingTools = "Использую инструменты...",
+        chatWriting = "Пишу...",
+        chatProcessing = "Обработка...",
+        chatRunning = "Выполняется",
+        chatResult = "Результат",
+        chatLines = "строк",
+        chatCollapse = "Свернуть",
+        chatExpand = "Развернуть",
 
         // Agents
         agentsTitle = "Пользовательские агенты",
