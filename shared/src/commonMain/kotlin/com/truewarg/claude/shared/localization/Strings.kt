@@ -92,6 +92,11 @@ data class Strings(
     val filesNoAccess: String,
     val filesPermissionRequired: String,
     val filesSelectFile: String,
+    val filesNoFiles: String,
+    val filesFolder: String,
+    val filesFile: String,
+    val filesDirectory: String,
+    val filesErrorLoading: String,
 
     // Git
     val gitTitle: String,
