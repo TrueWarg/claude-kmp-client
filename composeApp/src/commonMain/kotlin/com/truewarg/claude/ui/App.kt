@@ -51,6 +51,36 @@ fun App(
                                 updatedAt = timestamp
                             )
                             conversationRepository.createConversation(newConversation)
+
+                            // Add welcome message explaining what to do
+                            val welcomeMessage = com.truewarg.claude.shared.data.models.ChatMessage(
+                                id = "${timestamp}-welcome",
+                                conversationId = newConversation.id,
+                                role = com.truewarg.claude.shared.data.models.MessageRole.ASSISTANT,
+                                content = listOf(
+                                    com.truewarg.claude.shared.data.models.ContentBlock.Text(
+                                        """👋 Hello! I'm Claude, your AI coding assistant.
+
+**To get started, I need to know where your project is located.**
+
+Please tell me your workspace path in your first message. For example:
+• "Work in /Users/yourname/my-project"
+• "Use ~/code/myapp as workspace"
+• "My project is at C:\Users\name\projects\app"
+
+Once you specify the workspace, I can:
+✓ Read and write files
+✓ Execute commands
+✓ Help with coding tasks
+✓ Fix bugs and add features
+
+**What's your project directory, and how can I help you today?**"""
+                                    )
+                                ),
+                                timestamp = timestamp
+                            )
+                            conversationRepository.addMessage(welcomeMessage)
+
                             newConversation.id
                         } else {
                             conversations.first().id
