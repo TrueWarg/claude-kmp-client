@@ -88,7 +88,8 @@ data class MessagesRequest(
     @SerialName("top_k")
     val topK: Int? = null,
     @SerialName("stop_sequences")
-    val stopSequences: List<String>? = null
+    val stopSequences: List<String>? = null,
+    val tools: List<kotlinx.serialization.json.JsonObject>? = null
 )
 
 /**

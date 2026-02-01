@@ -12,7 +12,6 @@ import org.koin.dsl.module
 val apiModule = module {
     single { ClaudeApiClient(get(), get(), get()) }
     single { ConversationRepository(get(), get()) }
-    single { ChatRepository(get(), get()) }
 
     // Tools
     single { CommandExecutor() }
@@ -26,4 +25,6 @@ val apiModule = module {
             )
         )
     }
+
+    single { ChatRepository(get(), get(), get(), get()) }
 }
