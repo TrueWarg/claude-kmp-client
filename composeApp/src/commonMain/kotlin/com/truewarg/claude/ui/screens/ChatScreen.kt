@@ -98,25 +98,11 @@ fun ChatScreen(
     var messages by remember { mutableStateOf(conversationRepository.getMessages(conversationId)) }
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(conversationId) {
         messages = conversationRepository.getMessages(conversationId)
-    }
-
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            scope.launch {
-                snackbarHostState.showSnackbar(
-                    message = it,
-                    duration = SnackbarDuration.Long
-                )
-                errorMessage = null
-            }
-        }
     }
 
     Scaffold(
@@ -144,9 +130,6 @@ fun ChatScreen(
                 }
             )
         },
-        snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState)
-        },
         bottomBar = {
             ChatInput(
                 text = inputText,
@@ -169,7 +152,26 @@ fun ChatScreen(
                                     }
                                 }
                             } catch (e: Exception) {
-                                errorMessage = "Error: ${e.message ?: "Unknown error"}"
+                                // Add error as a message in chat so user can copy it
+                                val timestamp = System.currentTimeMillis()
+                                val errorMsg = ChatMessage(
+                                    id = "$timestamp-error",
+                                    conversationId = conversationId,
+                                    role = MessageRole.ASSISTANT,
+                                    content = listOf(
+                                        ContentBlock.Text(
+                                            "❌ **Error**\n\n" +
+                                            "${e.message ?: "Unknown error"}\n\n" +
+                                            "```\n${e.stackTraceToString()}\n```"
+                                        )
+                                    ),
+                                    timestamp = timestamp
+                                )
+                                conversationRepository.addMessage(errorMsg)
+                                messages = conversationRepository.getMessages(conversationId)
+                                scope.launch {
+                                    listState.animateScrollToItem(messages.size - 1)
+                                }
                             } finally {
                                 isLoading = false
                             }
@@ -721,19 +723,19 @@ fun ChatInput(
                 onValueChange = onTextChange,
                 modifier = Modifier
                     .weight(1f)
-                    .onKeyEvent { keyEvent ->
-                        if (keyEvent.type == KeyEventType.KeyDown) {
-                            when {
-                                keyEvent.key == Key.Enter && !keyEvent.isShiftPressed -> {
-                                    if (enabled && text.isNotBlank()) {
-                                        onSend()
-                                    }
-                                    true
-                                }
-                                else -> false
+                    .onPreviewKeyEvent { keyEvent ->
+                        // Only intercept Enter without Shift, let Shift+Enter pass through
+                        if (keyEvent.type == KeyEventType.KeyDown &&
+                            keyEvent.key == Key.Enter &&
+                            !keyEvent.isShiftPressed) {
+                            if (enabled && text.isNotBlank()) {
+                                onSend()
+                                true // Consume the event
+                            } else {
+                                false // Let TextField handle it
                             }
                         } else {
-                            false
+                            false // Let TextField handle all other keys including Shift+Enter
                         }
                     },
                 placeholder = { Text("Message... (Enter to send, Shift+Enter for new line)") },
