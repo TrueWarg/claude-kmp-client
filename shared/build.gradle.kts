@@ -49,6 +49,12 @@ kotlin {
 
                 // AndroidX Security for encrypted storage
                 implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+                // DocumentFile for Scoped Storage
+                implementation("androidx.documentfile:documentfile:1.0.1")
+
+                // Core for ContextCompat
+                implementation("androidx.core:core-ktx:1.12.0")
             }
         }
 

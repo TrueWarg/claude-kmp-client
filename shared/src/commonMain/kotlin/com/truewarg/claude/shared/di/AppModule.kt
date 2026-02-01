@@ -20,6 +20,7 @@ val appModule: List<Module> = listOf(
     platformStorageModule,
     storageModule,
     apiModule,
+    fileSystemModule,
     // Additional modules will be added here as we implement features
     // gitModule,
     // agentModule,
