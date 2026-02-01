@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import com.truewarg.claude.shared.data.models.ChatMessage
 import com.truewarg.claude.shared.data.models.ContentBlock
@@ -29,11 +30,25 @@ fun ChatScreen(
     var messages by remember { mutableStateOf(conversationRepository.getMessages(conversationId)) }
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(conversationId) {
         messages = conversationRepository.getMessages(conversationId)
+    }
+
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = it,
+                    duration = SnackbarDuration.Long
+                )
+                errorMessage = null
+            }
+        }
     }
 
     Scaffold(
@@ -44,6 +59,9 @@ fun ChatScreen(
                     Text(conversation?.title ?: "Chat")
                 }
             )
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         },
         bottomBar = {
             ChatInput(
@@ -67,7 +85,7 @@ fun ChatScreen(
                                     }
                                 }
                             } catch (e: Exception) {
-                                println("Error sending message: ${e.message}")
+                                errorMessage = "Error: ${e.message ?: "Unknown error"}"
                             } finally {
                                 isLoading = false
                             }
@@ -190,14 +208,32 @@ fun ChatInput(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.Bottom
         ) {
             TextField(
                 value = text,
                 onValueChange = onTextChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Message...") },
+                modifier = Modifier
+                    .weight(1f)
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyDown) {
+                            when {
+                                keyEvent.key == Key.Enter && !keyEvent.isShiftPressed -> {
+                                    if (enabled && text.isNotBlank()) {
+                                        onSend()
+                                    }
+                                    true
+                                }
+                                else -> false
+                            }
+                        } else {
+                            false
+                        }
+                    },
+                placeholder = { Text("Message... (Enter to send, Shift+Enter for new line)") },
                 enabled = enabled,
+                minLines = 1,
+                maxLines = 6,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -208,7 +244,8 @@ fun ChatInput(
 
             Button(
                 onClick = onSend,
-                enabled = enabled && text.isNotBlank()
+                enabled = enabled && text.isNotBlank(),
+                modifier = Modifier.height(56.dp)
             ) {
                 Text("Send")
             }
